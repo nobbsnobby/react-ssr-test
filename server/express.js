@@ -1,63 +1,72 @@
-const express = require( 'express' );
-const fs = require( 'fs' );
-const path = require( 'path' );
-const React = require( 'react' );
-const ReactDOMServer = require( 'react-dom/server' );
-const { StaticRouter, matchPath } = require( 'react-router-dom' );
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
 
-// create express application
+const React = require("react");
+const ReactDOMServer = require("react-dom/server");
+const { Helmet } = require("react-helmet");
+const { matchPath } = require("react-router-dom");
+
+const { StaticRouter } = require("react-router-dom/server");
+const { App } = require("../src/components/app");
+// импорт роутов
+const routes = require("./routes");
+
 const app = express();
 
-// import App component
-const { App } = require( '../src/components/app' );
+app.get(
+  /\.(js|css|map|ico)$/,
+  express.static(path.resolve(__dirname, "../dist"))
+);
 
-// import routes
-const routes = require( './routes' );
-
-// serve static assets
-app.get( /\.(js|css|map|ico)$/, express.static( path.resolve( __dirname, '../dist' ) ) );
-
-// for any other requests, send `index.html` as a response
-app.use( '*', async ( req, res ) => {
-
-    // get matched route
-    const matchRoute = routes.find( route => matchPath( req.originalUrl, route ) );
-
-    // fetch data of the matched component
-    let componentData = null;
-    if( typeof matchRoute.component.fetchData === 'function' ) {
-        componentData = await matchRoute.component.fetchData();
+app.use("*", async (req, res) => {
+  // читаем файл `index.html`
+  let indexHTML = fs.readFileSync(
+    path.resolve(__dirname, "../dist/index.html"),
+    {
+      encoding: "utf8",
     }
+  );
 
-    // read `index.html` file
-    let indexHTML = fs.readFileSync( path.resolve( __dirname, '../dist/index.html' ), {
-        encoding: 'utf8',
-    } );
+  //fetch data from component
+  let context = {};
+  const matchRoute = routes.find((path) =>
+    matchPath(path.path, req.originalUrl)
+  );
 
-    // get HTML string from the `App` component
-    let appHTML = ReactDOMServer.renderToString(
-        <StaticRouter location={ req.originalUrl } context={ componentData }>
-            <App />
-        </StaticRouter>
-    );
+  if (typeof matchRoute.component.getInitialProps === "function") {
+    context = await matchRoute.component.getInitialProps();
+  }
 
-    // populate `#app` element with `appHTML`
-    indexHTML = indexHTML.replace( '<div id="app"></div>', `<div id="app">${ appHTML }</div>` );
+  let appHTML = ReactDOMServer.renderToString(
+    <StaticRouter location={req.originalUrl} context={context}>
+      <App context={context} />
+    </StaticRouter>
+  );
+  const helmet = Helmet.renderStatic();
 
-    // set value of `initial_state` global variable
-    indexHTML = indexHTML.replace(
-        'var initial_state = null;',
-        `var initial_state = ${ JSON.stringify( componentData ) };`
-    );
+  //helmet replaces
+  indexHTML = indexHTML.replace(
+    /<title>.*<\/title>/gim,
+    `${helmet.title.toString()}`
+  );
 
-    // set header and status
-    res.contentType( 'text/html' );
-    res.status( 200 );
+  indexHTML = indexHTML.replace(
+    '<div id="app"></div>',
+    `<div id="app">${appHTML}</div>`
+  );
+  indexHTML = indexHTML.replace(
+    "let initial_state = null;",
+    `let initial_state = ${JSON.stringify(context)};`
+  );
 
-    return res.send( indexHTML );
-} );
+  // устанавливаем заголовок и статус
+  res.contentType("text/html");
+  res.status(200);
 
-// run express server on port 9000
-app.listen( '9000', () => {
-    console.log( 'Express server started at http://localhost:9000' );
-} );
+  return res.send(indexHTML);
+});
+// запускаем сервер на порту 9000
+app.listen("9000", () => {
+  console.log("Express server started at <http://localhost:9000>");
+});

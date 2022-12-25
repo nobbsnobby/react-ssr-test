@@ -1,55 +1,51 @@
-import React from 'react';
-import { NavLink as Link, Switch, Route } from 'react-router-dom';
+import React from "react";
+import { NavLink as Link, Route, Routes } from "react-router-dom";
 
 // import child components
-import { Counter } from '../counter';
-import { Post } from '../post';
+import { Counter } from "../counter";
+import { Post } from "../post";
+import { Helmet } from "react-helmet";
 
 // export entry application component
-export class App extends React.Component {
-    constructor() {
-        console.log( 'App.constructor()' );
-        super();
-    }
+export const App = (props) => {
+  // render view
+    console.log(props)
 
-    // render view
-    render() {
-        console.log( 'App.render()' );
+  return (
+    <div className="ui-app">
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>My Title</title>
+        <link rel="canonical" href="http://mysite.com/example" />
+      </Helmet>
+      <div className="ui-app__navigation">
+        <Link
+          className={({ isActive }) =>
+            isActive
+              ? "ui-app__navigation__link ui-app__navigation__link--active"
+              : "ui-app__navigation__link"
+          }
+          to="/"
+        >
+          Counter
+        </Link>
 
-        return (
-            <div className='ui-app'>
-                {/* navigation */}
-                <div className='ui-app__navigation'>
-                    <Link
-                        className='ui-app__navigation__link'
-                        activeClassName='ui-app__navigation__link--active'
-                        to='/'
-                        exact={ true }
-                    >Counter</Link>
+        <Link
+          className={({ isActive }) =>
+            isActive
+              ? "ui-app__navigation__link ui-app__navigation__link--active"
+              : "ui-app__navigation__link"
+          }
+          to="/post"
+        >
+          Post
+        </Link>
+      </div>
 
-                    <Link
-                        className='ui-app__navigation__link'
-                        activeClassName='ui-app__navigation__link--active'
-                        to='/post'
-                        exact={ true }
-                    >Post</Link>
-                </div>
-
-                <Switch>
-                    <Route
-                        path='/'
-                        exact={ true }
-                        render={ () => <Counter name='Monica Geller'/> }
-                    />
-
-                    <Route
-                        path='/post'
-                        exact={ true }
-                        component={ Post }
-                    />
-                </Switch>
-                
-            </div>
-        );
-    }
-}
+      <Routes>
+        <Route path="/" element={<Counter name="Monica Geller" />} />
+        <Route path="/post" element={<Post />} />
+      </Routes>
+    </div>
+  );
+};

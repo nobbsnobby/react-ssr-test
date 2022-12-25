@@ -1,2 +1,2 @@
-import './post.style';
-export * from './post.component';
+import "./post.style";
+export * from "./post.component";

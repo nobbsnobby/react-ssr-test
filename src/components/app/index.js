@@ -1,2 +1,2 @@
-import './app.style';
-export * from './app.component';
+import "./app.style";
+export * from "./app.component";

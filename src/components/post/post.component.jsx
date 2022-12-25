@@ -1,77 +1,91 @@
-import React from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-export class Post extends React.Component {
-    constructor( props ) {
-        console.log( 'Post.constructor()' );
+export const Post = (props) => {
+  console.log(props)
+  const [state, setState] = useState({
+    isLoading: true,
+    title: "",
+    description: "",
+  });
 
-        super();
-
-        // component state
-        if( props.staticContext ) {
-            this.state = {
-                isLoading: false,
-                title: props.staticContext.title,
-                description: props.staticContext.body,
-            };
-        } else if( window.initial_state ) {
-            this.state = {
-                isLoading: false,
-                title: window.initial_state.title,
-                description: window.initial_state.body,
-            };
-        } else {
-            this.state = {
-                isLoading: true,
-                title: '',
-                description: '',
-            };
-        }
+  useEffect(() => {
+    if (props.staticContext) {
+      setState({
+        isLoading: false,
+        title: props.staticContext.title,
+        description: props.staticContext.body,
+      });
+    } else if (window.initial_state) {
+      setState({
+        isLoading: false,
+        title: window.initial_state.title,
+        description: window.initial_state.body,
+      });
+    } else {
+      setState({
+        isLoading: true,
+        title: "",
+        description: "",
+      });
     }
+  }, []);
 
-    // fetch data
-    static fetchData() {
-        console.log( 'Post.fetchData()' );
+  // fetch data
+  const fetchData = () => {
+    console.log("Post.fetchData()");
 
-       return axios.get( 'https://jsonplaceholder.typicode.com/posts/3' ).then( response => {
-            return {
-                title: response.data.title,
-                body: response.data.body,
-            };
-        } );
+    return axios
+      .get("https://jsonplaceholder.typicode.com/posts/3")
+      .then((response) => {
+        return {
+          title: response.data.title,
+          body: response.data.body,
+        };
+      });
+  };
+
+  // when component mounts, fetch data
+  useEffect(() => {
+    console.log("axios");
+    if (state.isLoading) {
+      console.log("Post.componentDidMount()");
+
+      fetchData().then((data) => {
+        setState({
+          isLoading: false,
+          title: data.title,
+          description: data.body,
+        });
+      });
     }
+  }, []);
 
-    // when component mounts, fetch data
-    componentDidMount() {
-        if( this.state.isLoading ) {
-            console.log( 'Post.componentDidMount()' );
+  console.log("Post.render()");
 
-            Post.fetchData().then( data => {
-                this.setState( {
-                    isLoading: false,
-                    title: data.title,
-                    description: data.body,
-                } );
-            } );
-        }
-    }
+  return (
+    <div className="ui-post">
+      <p className="ui-post__title">Post Widget</p>
 
-    render() {
-        console.log( 'Post.render()' );
+      {state.isLoading ? (
+        "loading..."
+      ) : (
+        <div className="ui-post__body">
+          <p className="ui-post__body__title">{state.title}</p>
+          <p className="ui-post__body__description">{state.description}</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
-        return (
-            <div className='ui-post'>
-                <p className='ui-post__title'>Post Widget</p>
-
-                {
-                    this.state.isLoading ? 'loading...' : (
-                        <div className='ui-post__body'>
-                            <p className='ui-post__body__title'>{ this.state.title }</p>
-                            <p className='ui-post__body__description'>{ this.state.description }</p>
-                        </div>
-                    )
-                }
-            </div>
-        );
-    }
-}
+Post.getInitialProps = async () => {
+  return axios
+    .get("https://jsonplaceholder.typicode.com/posts/3")
+    .then((response) => {
+      return {
+        title: response.data.title,
+        body: response.data.body,
+      };
+    });
+};
